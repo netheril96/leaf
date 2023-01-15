@@ -140,10 +140,7 @@ impl Handler {
 
 #[async_trait]
 impl InboundDatagramHandler for Handler {
-    async fn handle<'a>(
-        &'a self,
-        socket: AnyInboundDatagram,
-    ) -> io::Result<AnyInboundTransport> {
+    async fn handle<'a>(&'a self, socket: AnyInboundDatagram) -> io::Result<AnyInboundTransport> {
         let (cert, key) =
             fs::read(&self.certificate).and_then(|x| Ok((x, fs::read(&self.certificate_key)?)))?;
 
@@ -195,6 +192,7 @@ impl InboundDatagramHandler for Handler {
         let mut transport_config = quinn::TransportConfig::default();
         transport_config
             .max_concurrent_uni_streams(quinn::VarInt::from_u32(0))
+            .congestion_controller_factory(Arc::new(quinn::congestion::BbrConfig::default()))
             .max_idle_timeout(Some(quinn::IdleTimeout::from(quinn::VarInt::from_u32(
                 300_000,
             )))); // ms
